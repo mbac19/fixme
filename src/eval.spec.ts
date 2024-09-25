@@ -1,7 +1,11 @@
 import { Eval } from "./eval";
 
 describe("eval", () => {
-  test("not yet implemented", () => {
-    expect(() => Eval.eval("x + 1", { x: 2 })).toThrow();
+  test.skip("evaluates basic expression with only literals", () => {
+    expect(Eval.eval("1 + 1")).toBe(2);
+  });
+
+  test.skip("evaluates basic expression with symbols", () => {
+    expect(Eval.eval("x + 1", { x: 2 })).toBe(3);
   });
 });
