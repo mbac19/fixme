@@ -2,15 +2,13 @@
 
 A library for parsing math equations in Javascript.
 
-## Setup Environment
+## What To Do
 
 - Download [node js](https://nodejs.org/en/download/)
-- Download [yarn package manager](https://yarnpkg.com/en/)
 - Clone the repo
-- Run the following command: `yarn`
-- To rebuild the source code, run `npm run build`
-- To run the unit tests, run `npm run test`
-  - `npm run test-watch` to reload unit tests on file changes
+- Install dependencies: `npm i`
+- Run the unit tests: `npm run test`
+- *Or watch the unit tests:* `npm run test -- --watch`
 
 ## Features
 
