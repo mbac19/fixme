@@ -396,6 +396,7 @@ function isOperator<T>(val: T | Operator): val is Operator {
   return (
     Boolean(val) &&
     typeof val === "object" &&
+    val !== null &&
     "type" in val &&
     Object.values(OperatorType).includes(val.type)
   );
