@@ -62,11 +62,11 @@ export class OperatorProcessor {
   /**
    * The stack of operators that we are processing.
    * This is an array of triples, where the first element in the triple is the
-   * operpator, the second is the start position of the operator in source,
+   * operator, the second is the start position of the operator in source,
    * and the third is the end position within the source.
    */
   private operatorStack: Array<
-    [Operator | CloseSymbol | OpenSymbol | "StartOfFunction", number, number]
+    Operator | CloseSymbol | OpenSymbol | "StartOfFunction"
   > = [];
 
   constructor(private readonly def: ParserDef) {}
@@ -91,15 +91,13 @@ export class OperatorProcessor {
   public done(): MathASTNode {
     // Loop through, pop, and resolve any operators still left on the stack.
     while (this.operatorStack.length > 0) {
-      const triple = this.operatorStack.pop();
+      const operator = this.operatorStack.pop();
 
-      if (triple === undefined || !isOperator(triple[0])) {
+      if (operator === undefined || !isOperator(operator)) {
         throw new MathSyntaxError();
       }
 
-      const [operator, sourceStart, sourceEnd] = triple;
-
-      const arity = getArity(triple[0]);
+      const arity = getArity(operator);
 
       const params = this.nodes.splice(-arity, arity);
 
@@ -107,9 +105,7 @@ export class OperatorProcessor {
         throw new IncorrectArityError();
       }
 
-      this.nodes.push(
-        makeOperatorNode(operator, params, sourceStart, sourceEnd)
-      );
+      this.nodes.push(makeOperatorNode(operator, params));
     }
 
     if (this.nodes.length !== 1) {
@@ -148,13 +144,13 @@ export class OperatorProcessor {
   ) {
     this.typeAddedCurrentPass = MathASTNodeType.Variable;
     this.maybeImplicitMultiply(sourceStart);
-    this.nodes.push(makeVariableNode(variable, sourceStart, sourceEnd));
+    this.nodes.push(makeVariableNode(variable));
   }
 
   public addLiteral(literal: Literal, sourceStart: number, sourceEnd: number) {
     this.typeAddedCurrentPass = MathASTNodeType.Literal;
     this.maybeImplicitMultiply(sourceStart);
-    this.nodes.push(makeLiteralNode(literal, sourceStart, sourceEnd));
+    this.nodes.push(makeLiteralNode(literal));
   }
 
   public addOperator(
@@ -180,7 +176,7 @@ export class OperatorProcessor {
   public addOpenParens(sourceStart: number, sourceEnd: number) {
     this.typeAddedCurrentPass = "(";
     this.maybeImplicitMultiply(sourceStart);
-    this.operatorStack.push(["(", sourceStart, sourceEnd]);
+    this.operatorStack.push("(");
   }
 
   /**
@@ -203,11 +199,9 @@ export class OperatorProcessor {
     }
 
     // Continuously pop until reaching the corresponding parenthesis.
-    let triple = this.operatorStack.pop();
+    let operator = this.operatorStack.pop();
 
-    while (triple !== undefined && isOperator(triple[0])) {
-      const [operator, sourceStart, sourceEnd] = triple;
-
+    while (operator !== undefined && isOperator(operator)) {
       const arity = getArity(operator);
 
       const params = this.nodes.splice(-arity, arity);
@@ -216,14 +210,12 @@ export class OperatorProcessor {
         throw new IncorrectArityError();
       }
 
-      this.nodes.push(
-        makeOperatorNode(operator, params, sourceStart, sourceEnd)
-      );
+      this.nodes.push(makeOperatorNode(operator, params));
 
-      triple = this.operatorStack.pop();
+      operator = this.operatorStack.pop();
     }
 
-    if (triple && triple[0] === "StartOfFunction" && !isComma) {
+    if (operator && operator === "StartOfFunction" && !isComma) {
       // We processed everything from the start to the end of the function,
       // need to finish off processing this function call.
 
@@ -231,16 +223,14 @@ export class OperatorProcessor {
       this.remainingFunctionOperands -= 1;
 
       // StartOfFunction is always preceded by its FunctionOperator
-      const functionTriple = this.operatorStack.pop();
+      const functionOperator = this.operatorStack.pop();
 
       if (
-        functionTriple === undefined ||
-        !isFunctionOperator(functionTriple[0])
+        functionOperator === undefined ||
+        !isFunctionOperator(functionOperator)
       ) {
         throw new MathSyntaxError();
       }
-
-      const [functionOperator, sourceStart, sourceEnd] = functionTriple;
 
       const arity = getArity(functionOperator);
 
@@ -250,9 +240,7 @@ export class OperatorProcessor {
         throw new IncorrectArityError();
       }
 
-      this.nodes.push(
-        makeOperatorNode(functionOperator, params, sourceStart, sourceEnd)
-      );
+      this.nodes.push(makeOperatorNode(functionOperator, params));
     }
   }
 
@@ -267,7 +255,7 @@ export class OperatorProcessor {
   ) {
     this.typeAddedCurrentPass = MathASTNodeType.UnaryOperator;
     this.maybeImplicitMultiply(sourceStart);
-    this.operatorStack.push([operator, sourceStart, sourceEnd]);
+    this.operatorStack.push(operator);
   }
 
   /**
@@ -288,33 +276,29 @@ export class OperatorProcessor {
     const precedenceValue = getPrecedenceValue(operator);
 
     // Peek at the last operator on the stack.
-    let lastTriple = this.operatorStack[this.operatorStack.length - 1];
+    let lastOperator = this.operatorStack[this.operatorStack.length - 1];
 
     while (
-      lastTriple !== undefined &&
-      isOperator(lastTriple[0]) &&
+      lastOperator !== undefined &&
+      isOperator(lastOperator) &&
       // Left Associative
       ((this.def.isLeftAssociative &&
-        getPrecedenceValue(lastTriple[0]) >= precedenceValue) ||
+        getPrecedenceValue(lastOperator) >= precedenceValue) ||
         // Right Associative
-        getPrecedenceValue(lastTriple[0]) > precedenceValue)
+        getPrecedenceValue(lastOperator) > precedenceValue)
     ) {
       this.operatorStack.pop();
-      const arity = getArity(lastTriple[0]);
+      const arity = getArity(lastOperator);
       const params = this.nodes.splice(-arity, arity);
-      const node = makeOperatorNode(
-        lastTriple[0],
-        params,
-        lastTriple[1],
-        lastTriple[2]
-      );
+      const node = makeOperatorNode(lastOperator, params);
+
       this.nodes.push(node);
 
       // Peek at the last operator on the stack.
-      lastTriple = this.operatorStack[this.operatorStack.length - 1];
+      lastOperator = this.operatorStack[this.operatorStack.length - 1];
     }
 
-    this.operatorStack.push([operator, sourceStart, sourceEnd]);
+    this.operatorStack.push(operator);
   }
 
   private addFunctionOperator(
@@ -326,10 +310,7 @@ export class OperatorProcessor {
 
     this.maybeImplicitMultiply(sourceStart);
 
-    this.operatorStack.push(
-      [operator, sourceStart, sourceEnd],
-      ["StartOfFunction", sourceStart, sourceEnd]
-    );
+    this.operatorStack.push(operator, "StartOfFunction");
 
     this.remainingFunctionOperands = getArity(operator);
   }

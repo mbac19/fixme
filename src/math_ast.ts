@@ -19,34 +19,29 @@ export enum MathASTNodeType {
   Variable,
 }
 
-export interface MathASTNodeBase {
-  sourceStart: number;
-  sourceEnd: number;
-}
-
-export interface LiteralMathASTNode extends MathASTNodeBase {
+export interface LiteralMathASTNode {
   type: MathASTNodeType.Literal;
   value: Literal;
 }
 
-export interface VariableMathASTNode extends MathASTNodeBase {
+export interface VariableMathASTNode {
   type: MathASTNodeType.Variable;
   value: Variable;
 }
 
-export interface BinaryOperatorMathASTNode extends MathASTNodeBase {
+export interface BinaryOperatorMathASTNode {
   type: MathASTNodeType.BinaryOperator;
   operator: BinaryOperator;
   value: [MathASTNode, MathASTNode];
 }
 
-export interface UnaryOperatorMathASTNode extends MathASTNodeBase {
+export interface UnaryOperatorMathASTNode {
   type: MathASTNodeType.UnaryOperator;
   operator: UnaryOperator;
   value: [MathASTNode];
 }
 
-export interface FunctionOperatorMathASTNode extends MathASTNodeBase {
+export interface FunctionOperatorMathASTNode {
   type: MathASTNodeType.FunctionOperator;
   operator: FunctionOperator;
   value: Array<MathASTNode>;
@@ -64,37 +59,23 @@ export type MathASTNode =
   | UnaryOperatorMathASTNode
   | VariableMathASTNode;
 
-export function makeLiteralNode(
-  value: number,
-  sourceStart: number,
-  sourceEnd: number
-): LiteralMathASTNode {
+export function makeLiteralNode(value: number): LiteralMathASTNode {
   return {
     type: MathASTNodeType.Literal,
     value,
-    sourceStart: sourceStart,
-    sourceEnd: sourceEnd,
   };
 }
 
-export function makeVariableNode(
-  value: string,
-  sourceStart: number,
-  sourceEnd: number
-): VariableMathASTNode {
+export function makeVariableNode(value: string): VariableMathASTNode {
   return {
     type: MathASTNodeType.Variable,
     value,
-    sourceStart,
-    sourceEnd,
   };
 }
 
 export function makeOperatorNode(
   operator: Operator,
-  value: Array<MathASTNode>,
-  sourceStart: number,
-  sourceEnd: number
+  value: Array<MathASTNode>
 ): OperatorMathASTNode {
   switch (operator.type) {
     case OperatorType.Binary: {
@@ -106,8 +87,6 @@ export function makeOperatorNode(
         type: MathASTNodeType.BinaryOperator,
         operator,
         value: value as [MathASTNode, MathASTNode],
-        sourceStart,
-        sourceEnd,
       };
     }
 
@@ -120,8 +99,6 @@ export function makeOperatorNode(
         type: MathASTNodeType.UnaryOperator,
         operator,
         value: value as [MathASTNode],
-        sourceStart,
-        sourceEnd,
       };
     }
 
@@ -134,8 +111,6 @@ export function makeOperatorNode(
         type: MathASTNodeType.FunctionOperator,
         operator,
         value,
-        sourceStart,
-        sourceEnd,
       };
     }
   }
